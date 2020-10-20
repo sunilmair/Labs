@@ -7,15 +7,30 @@ import matplotlib.pyplot as plt
 
 
 
-def make_struc(alat):
+def make_Fe_hcp_struc(alat, clat):
     """
     Creates the crystal structure using ASE.
     :param alat: Lattice parameter in angstrom
     :return: structure object converted from ase
     """
-    fecell = bulk('Fe', 'hcp', a=alat)
+    fecell = bulk('Fe', 'hcp', a=alat, c=clat)
     # check how your cell looks like
-    #write('s.cif', gecell)
+    write('Fe_hcp_' + str(alat) + '_' + str(clat), fecell)
+    print(fecell, fecell.get_atomic_numbers())
+    fecell.set_atomic_numbers([26, 27])
+    structure = Struc(ase2struc(fecell))
+    print(structure.species)
+    return structure
+
+def make_Fe_bcc_struc(alat, unitcell_type):
+    """
+    Creates the crystal structure using ASE.
+    :param alat: Lattice parameter in angstrom
+    :return: structure object converted from ase
+    """
+    fecell = bulk('Fe', 'bcc', a=alat)
+    # check how your cell looks like
+    write('Fe_bcc_' + str(alat), fecell)
     print(fecell, fecell.get_atomic_numbers())
     fecell.set_atomic_numbers([26, 27])
     structure = Struc(ase2struc(fecell))
@@ -78,6 +93,11 @@ def lattice_scan():
     alat = 3.0
     output = compute_energy(alat=alat, ecut=ecut, nk=nk)
     print(output)
+
+def check_struc():
+    make_Fe_hcp_struc(2.466,3.9)
+    make_Fe_bcc_struc(2.86)
+
 
 if __name__ == '__main__':
     # put here the function that you actually want to run
