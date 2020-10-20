@@ -86,6 +86,62 @@ def compute_energy(alat, nk, ecut):
     return output
 
 
+def relax_Fe_hcp_energy(alat, clat, nk, ecut, forc_conv_thr, press_conv_thr):
+    """
+    Make an input template and select potential and structure, and the path where to run
+    """
+    potname = 'Fe.pbe-nd-rrkjus.UPF'
+    potpath = os.path.join(os.environ['ESPRESSO_PSEUDO'], potname)
+    pseudopots = {'Fe': PseudoPotential(path=potpath, ptype='uspp', element='Fe',
+                                        functional='GGA', name=potname),
+                  'Co': PseudoPotential(path=potpath, ptype='uspp', element='Fe',
+                                        functional='GGA', name=potname)
+                  }
+    struc = make_Fe_hcp_struc(alat=alat, clat=clat)
+    kpts = Kpoints(gridsize=[2*nk, 2*nk, nk], option='automatic', offset=False)
+    dirname = 'Fe_hcp_a_{}_ecut_{}_nk_{}'.format(alat, ecut, nk)
+    runpath = Dir(path=os.path.join(os.environ['WORKDIR'], "Lab3/Problem1", dirname))
+    input_params = PWscf_inparam({
+        'CONTROL': {
+            'calculation': 'vc-relax',
+            'force_conv_thr': forc_conv_thr
+            'pseudo_dir': os.environ['ESPRESSO_PSEUDO'],
+            'outdir': runpath.path,
+            'tstress': True,
+            'tprnfor': True,
+            'disk_io': 'none',
+        },
+        'SYSTEM': {
+            'ecutwfc': ecut,
+            'ecutrho': ecut * 8,
+            'nspin': 2,
+            'starting_magnetization(1)': 0.7,
+            'occupations': 'smearing',
+            'smearing': 'mp',
+            'degauss': 0.02
+             },
+        'ELECTRONS': {
+            'diagonalization': 'david',
+            'mixing_beta': 0.5,
+            'conv_thr': 1e-7,
+        },
+        'IONS': {
+            'ion_dynamics': 'bfgs',
+        },
+        'CELL': {
+            'cell_dofree': 'all',
+            'cell_dynamics': 'bfgs',
+            'press': 0.0,
+            'press_conv_thr': press_conv_thr,
+        },
+        })
+
+    output_file = run_qe_pwscf(runpath=runpath, struc=struc,  pseudopots=pseudopots,
+                               params=input_params, kpoints=kpts, ncpu=4)
+    output = parse_qe_pwscf_output(outfile=output_file)
+    return output
+
+
 
 def lattice_scan():
     nk = 3
@@ -98,7 +154,18 @@ def check_struc():
     make_Fe_hcp_struc(2.466,3.9)
     make_Fe_bcc_struc(2.86)
 
+def problem1a():
+    nk = 2
+    ecut = 30
+    alat = 2.466
+    clat = 3.9
+
+    forc_conv_thr = 0.001
+    press_conv_thr = 0.5
+
+    output = relax_Fe_hcp_energy(alat, clat, nk, ecut, forc_conv_thr, press_conv_thr)
+
 
 if __name__ == '__main__':
     # put here the function that you actually want to run
-    check_struc()
+    problem1a()
