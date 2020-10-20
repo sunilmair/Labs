@@ -101,4 +101,4 @@ def check_struc():
 
 if __name__ == '__main__':
     # put here the function that you actually want to run
-    lattice_scan()
+    check_struc()
